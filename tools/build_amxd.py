@@ -95,7 +95,7 @@ controls = [
                                 extra={"text": "Bass", "texton": "Bass", "mode": 1})),
     ("invx", "live.text", dict(rect=(X + 124, 94, 50, 18), p=param("FlipX", 2, mmax=1, enum=["off", "on"], initial=0),
                                 extra={"text": "Flip X", "texton": "Flip X", "mode": 1})),
-    ("invy", "live.text", dict(rect=(X + 178, 94, 50, 18), p=param("FlipY", 2, mmax=1, enum=["off", "on"], initial=0),
+    ("invy", "live.text", dict(rect=(X + 178, 94, 50, 18), p=param("FlipY", 2, mmax=1, enum=["off", "on"], initial=1),
                                 extra={"text": "Flip Y", "texton": "Flip Y", "mode": 1})),
     ("settle", "live.dial", dict(rect=(X, 94, 52, 62), p=param("Settle", 1, mmin=0, mmax=200, initial=60, unit=2))),
     ("deadzone", "live.dial", dict(rect=(X + 62, 94, 52, 62), p=param("Deadzone", 0, mmin=0.1, mmax=0.8, initial=0.35, unit=1))),

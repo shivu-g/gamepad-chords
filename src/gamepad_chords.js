@@ -4,8 +4,8 @@
 // ES5 only (Max's classic js engine).
 //
 // INPUT: connect [gamepad] straight to the js inlet. It understands gamepad's own messages:
-//   axis_left_x/y, axis_right_x/y   sticks (-1..1). Wheel orientation: stick UP = chord I.
-//                                   If your pad is mirrored, use invy 1 (flip vertical) / invx 1 (flip horizontal)
+//   axis_left_x/y, axis_right_x/y   sticks (-1..1). Stick UP = chord I. The gamepad object reports
+//                                   up as negative Y, so invy defaults to 1 (flip). Set invy 0 / invx 1 if mirrored.
 //   axis_right_trigger  0..1        velocity (30..127) of the next chord
 //   axis_left_trigger   0..1        inversion by depth: light = 1st, more = 2nd, full = 3rd
 //   button_a  toggle hold           button_b  toggle bass note
@@ -79,7 +79,7 @@ function chordSuffix(rel) {
 
 var CFG = {
   key: 0, scale: 0, mode: 1, layout: 1, octave: 0, inversion: 0, bass: 0, hold: 0,
-  deadzone: 0.35, hyst: 0.15, vel: 100, invx: 0, invy: 0, settle: 60
+  deadzone: 0.35, hyst: 0.15, vel: 100, invx: 0, invy: 1, settle: 60
 };
 var L = { x: 0, y: 0, active: false, sec: -1 };
 var R = { x: 0, y: 0, active: false, sec: -1 };

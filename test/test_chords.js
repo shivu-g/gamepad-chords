@@ -16,6 +16,7 @@ var offs = function () { return out.filter(function (o) { return o.length === 2 
 var name = function () { return lastName; };   // last chord name shown on the display
 var ok = 0, bad = 0;
 ctx.settle(0);   // earlier tests assume immediate chords
+ctx.invy(0);     // ... and raw stick values with UP = +1 (engine default is invy 1 for the real gamepad)
 function eq(label, got, want) { var g = JSON.stringify(got), w = JSON.stringify(want); if (g === w) { ok++; console.log("PASS", label, g); } else { bad++; console.log("FAIL", label, "got", g, "want", w); } }
 function a(label, val) { if (val) { ok++; console.log("PASS", label); } else { bad++; console.log("FAIL", label); } }
 
@@ -196,7 +197,7 @@ ui.length = 0; ctx.axis_left_x(0); ctx.axis_left_y(-1);
 var st = ui.filter(function (m) { return m[0] === "state"; }).pop();
 a("state message carries mode, sections and stick positions", st && st.length === 11 && st[2] === 0 && Math.abs(st[5] - 1) < 1e-9);
 // orientation switches
-ctx.panic(); ctx.invy(0); ctx.invx(0); ctx.mode(1); ctx.key(0);
+ctx.panic(); ctx.invy(0); ctx.invx(0);   // explicit: engine default is invy 1 ctx.mode(1); ctx.key(0);
 ctx.axis_left_x(0); ctx.axis_left_y(1);
 eq("default orientation: stick up (+y) = C", lastName, "C [1]");
 ctx.axis_left_y(-1);
@@ -215,5 +216,13 @@ ctx.button_start(1);
 a("start = panic centres sticks", ui.filter(function (m) { return m[0] === "state"; }).pop()[4] === 0);
 ctx.invy(0);
 
+// the engine default matches this pad: raw -y (stick up) plays C with no setup
+(function () {
+  var vm2 = require("vm"), c2 = { Task: Task, outlet: function () {}, Math: Math, Array: Array, Object: Object };
+  vm2.createContext(c2); vm2.runInContext(fs.readFileSync(__dirname + "/../src/gamepad_chords.js", "utf8"), c2);
+  var got = []; c2.outlet = function () { var x = [].slice.call(arguments); if (x[0] === 1 && x[1] === "set") got.push(x[2]); };
+  c2.settle(0); c2.axis_left_x(0); c2.axis_left_y(-1);
+  eq("default engine: raw stick-up (-y) = C", got[got.length - 1], "C [1]");
+})();
 console.log("\n" + ok + " passed, " + bad + " failed");
 process.exit(bad ? 1 : 0);
