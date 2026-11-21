@@ -83,9 +83,10 @@ line("js", 2, "wheel")
 # ---------------- controls (presentation) ----------------
 # name, class, text/label, presentation rect, param dict, js message, route name for feedback
 X = 534
+X2 = 780
 controls = [
     ("key", "live.menu", dict(rect=(X, 8, 70, 16), p=param("Key", 2, mmax=11, enum=NOTE_NAMES, initial=0))),
-    ("scale", "live.menu", dict(rect=(X + 76, 8, 70, 16), p=param("Scale", 2, mmax=1, enum=["Major", "Minor"], initial=0))),
+    ("scale", "live.menu", dict(rect=(X + 76, 8, 70, 16), p=param("Scale", 2, mmax=7, enum=["Major", "Minor", "Dorian", "Phrygian", "Lydian", "Mixolydian", "Locrian", "Harm Minor"], initial=0))),
     ("mode", "live.menu", dict(rect=(X + 152, 8, 76, 16), p=param("Mode", 2, mmax=1, enum=["Chromatic", "Diatonic"], initial=1))),
     ("octave", "live.numbox", dict(rect=(X, 34, 110, 16), p=param("Octave", 1, mmin=-2, mmax=2, initial=0, unit=0), extra={"showname": 1})),
     ("inversion", "live.numbox", dict(rect=(X + 118, 34, 110, 16), p=param("Inversion", 1, mmin=0, mmax=3, initial=0, unit=0), extra={"showname": 1})),
@@ -99,6 +100,15 @@ controls = [
                                 extra={"text": "Flip Y", "texton": "Flip Y", "mode": 1})),
     ("settle", "live.dial", dict(rect=(X, 94, 52, 62), p=param("Settle", 1, mmin=0, mmax=200, initial=60, unit=2))),
     ("deadzone", "live.dial", dict(rect=(X + 62, 94, 52, 62), p=param("Deadzone", 0, mmin=0.1, mmax=0.8, initial=0.35, unit=1))),
+    # second column: play style, palette, voice leading
+    ("style", "live.menu", dict(rect=(X2, 8, 110, 16), p=param("Style", 2, mmax=2, enum=["Chord", "Strum", "Arp"], initial=0))),
+    ("arppat", "live.menu", dict(rect=(X2 + 116, 8, 110, 16), p=param("ArpPattern", 2, mmax=3, enum=["Up", "Down", "Up/Down", "Random"], initial=0))),
+    ("palette", "live.text", dict(rect=(X2, 34, 70, 18), p=param("Palette", 2, mmax=1, enum=["off", "on"], initial=0),
+                                   extra={"text": "Jazz", "texton": "Jazz", "mode": 1})),
+    ("vlead", "live.text", dict(rect=(X2 + 76, 34, 100, 18), p=param("VoiceLeading", 2, mmax=1, enum=["off", "on"], initial=0),
+                                 extra={"text": "Voice lead", "texton": "Voice lead", "mode": 1})),
+    ("strum", "live.dial", dict(rect=(X2, 60, 52, 62), p=param("Strum", 1, mmin=5, mmax=300, initial=40, unit=2))),
+    ("arprate", "live.dial", dict(rect=(X2 + 62, 60, 52, 62), p=param("ArpRate", 1, mmin=30, mmax=1000, initial=125, unit=2))),
 ]
 for i, (name, cls, c) in enumerate(controls):
     if cls == "live.menu":
@@ -126,7 +136,7 @@ for i, (name, cls, c) in enumerate(controls):
     line(pid, 0, "js")
 
 # js outlet 3 -> route -> `set N` back into the controls (so buttons on the gamepad move the UI)
-fb = [n for n, cls, c in controls if n in ("key", "scale", "mode", "octave", "hold", "bass")]
+fb = [n for n, cls, c in controls if n in ("key", "scale", "mode", "octave", "hold", "bass", "style", "palette", "vlead")]
 add("route", "newobj", "route " + " ".join(fb), inl=1, outl=len(fb) + 1, outtypes=[""] * (len(fb) + 1), rect=(30, 360, 260, 22))
 line("js", 3, "route")
 for i, n in enumerate(fb):
@@ -138,7 +148,7 @@ patcher = {
     "classnamespace": "box",
     "rect": [100.0, 100.0, 900.0, 640.0],
     "openinpresentation": 1,
-    "devicewidth": 780.0,
+    "devicewidth": 1016.0,
     "gridonopen": 1,
     "gridsize": [15.0, 15.0],
     "toolbarvisible": 1,

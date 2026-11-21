@@ -183,7 +183,7 @@ fb.length = 0; ctx.button_dpad_right(1);
 a("dpad right: key +1 and UI feedback", fb.some(function (m) { return m[0] === "key" && m[1] === "set" && m[2] === 1; }));
 ctx.button_dpad_left(1);
 ctx.button_dpad_up(1); a("dpad up: minor", fb.some(function (m) { return m[0] === "scale" && m[2] === 1; }));
-ctx.button_dpad_up(1);
+ctx.scale(0);
 ctx.button_dpad_down(1); a("dpad down: chromatic", fb.some(function (m) { return m[0] === "mode" && m[2] === 0; }));
 ctx.button_dpad_down(1);
 ui.length = 0; ctx.key(2);
@@ -224,5 +224,66 @@ ctx.invy(0);
   c2.settle(0); c2.axis_left_x(0); c2.axis_left_y(-1);
   eq("default engine: raw stick-up (-y) = C", got[got.length - 1], "C [1]");
 })();
+
+// ---------- new features: scales, palette, voice leading, strum, arp ----------
+(function () {
+  ctx.panic(); ctx.settle(0); ctx.invy(0); ctx.style(0); ctx.vlead(0); ctx.palette(0);
+  ctx.mode(1); ctx.key(0); ctx.scale(2); ctx.octave(0); ctx.inversion(0); ctx.bass(0); ctx.hold(0);
+  ctx.lx(0); ctx.ly(1);
+  eq("dorian i = Cm", name(), "Cm [1]");
+  ctx.ly(0); ctx.scale(7); ctx.ly(1);
+  eq("harmonic minor i = Cm", name(), "Cm [1]");
+  ctx.ly(0); ctx.scale(0);
+  var n0 = 0; ctx.button_dpad_up(1); ctx.button_dpad_up(1); eq("dpad up cycles scales", ctx.CFG.scale, 2); ctx.scale(0);
+
+  // palette: right-stick extensions swap to 11th/13th...
+  ctx.palette(1); ui.length = 0; ctx.sync();
+  eq("palette labels (diatonic)", ui.filter(function (m) { return m[0] === "labelsR"; }).pop(), ["labelsR", "11th", "13th", "7sus4", "add11", "6/9", "sus2/7"]);
+  ctx.lx(0); ctx.ly(1); ctx.rx(0); ctx.ry(1);
+  a("palette 11th has 6 notes", ctx.sounding.length === 6);
+  ctx.ry(0); ctx.rx(0); ctx.ly(0);
+  ctx.mode(0); ctx.palette(1); ctx.layout(1); ctx.lx(0); ctx.ly(1); ctx.rx(0); ctx.ry(1);
+  eq("chromatic palette sector 0 = C6", name(), "C6");
+  ctx.ry(0); ctx.ly(0); ctx.palette(0); ctx.mode(1);
+
+  // voice leading keeps chord changes close
+  ctx.vlead(1); ctx.key(0); ctx.scale(0);
+  ctx.lx(0); ctx.ly(1);                               // C
+  var c1 = ctx.sounding.slice();
+  ctx.lx(0); ctx.ly(0);
+  ctx.panic(); ctx.vlead(1);
+  ctx.lx(0); ctx.ly(1); c1 = ctx.sounding.slice();    // C
+  var ang = 205.7 * Math.PI / 180; ctx.lx(Math.sin(ang)); ctx.ly(Math.cos(ang));   // G (V)
+  var c2 = ctx.sounding.slice();
+  var m1 = c1.reduce(function (p, q) { return p + q; }, 0) / c1.length, m2 = c2.reduce(function (p, q) { return p + q; }, 0) / c2.length;
+  a("voice leading: V stays within 3 semitones of I", Math.abs(m1 - m2) <= 3);
+  ctx.panic(); ctx.vlead(0);
+
+  // strum: first note now, rest on ticks
+  ctx.style(1); ctx.strum(40); ctx.lx(0); ctx.ly(0);
+  call("ly", 1);
+  eq("strum: only first note immediately", notes().length, 1);
+  call("lx", 0.0);
+  out.length = 0; fire(); a("strum: next note after tick", notes().length === 1);
+  out.length = 0; fire(); a("strum: third note after tick", notes().length === 1);
+  out.length = 0; fire(); a("strum: queue finished", notes().length === 0);
+  ctx.ly(0); a("strum: release clears all", ctx.on.length === 0);
+
+  // arp: single note at a time, cycling
+  ctx.style(2); ctx.arppat(0); ctx.arprate(100);
+  call("ly", 1);
+  var seq = notes();
+  out.length = 0; fire(); seq = seq.concat(notes());
+  out.length = 0; fire(); seq = seq.concat(notes());
+  out.length = 0; fire(); seq = seq.concat(notes());
+  eq("arp up pattern wraps", seq, [48, 52, 55, 48]);
+  a("arp never sounds more than one note", ctx.on.length === 1);
+  ctx.ly(0); a("arp release silences", ctx.on.length === 0);
+  ctx.arppat(2); call("ly", 1); seq = notes();
+  for (var i = 0; i < 4; i++) { out.length = 0; fire(); seq = seq.concat(notes()); }
+  eq("arp up-down pattern", seq, [48, 52, 55, 52, 48]);
+  ctx.ly(0); ctx.style(0); ctx.panic();
+})();
+
 console.log("\n" + ok + " passed, " + bad + " failed");
 process.exit(bad ? 1 : 0);

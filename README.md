@@ -43,16 +43,21 @@ Developed and tested on **Windows, Live 12 Suite / Max 9** with an Xbox 360-type
 | B | Bass note (root one octave below) |
 | X / Y | Octave down / up |
 | D-pad left / right | Key down / up one semitone |
-| D-pad up | Major / minor |
+| D-pad up | Next scale (major, minor, dorian, phrygian, lydian, mixolydian, locrian, harmonic minor) |
 | D-pad down | Chromatic / diatonic |
+| Left bumper | Play style: chord, strum, arpeggio |
+| Right bumper | Voice leading on / off |
+| Back / Select | Jazz palette on / off (swaps the right-stick set for 6ths, 9ths, 11ths, 13ths, m7b5 and so on) |
 | Start | Panic (all notes off) |
 
-Button presses move the dials on the device too. The device also has Key, Scale, Mode, Octave, Inversion, Hold, Bass, Settle, Deadzone, Flip X, Flip Y and Panic controls.
+Button presses move the dials on the device too. The device also has Key, Scale, Mode, Octave, Inversion, Hold, Bass, Style, Arp pattern, Jazz, Voice lead, Strum, Arp rate, Settle, Deadzone, Flip X, Flip Y and Panic controls. If a bumper or Back does nothing on your pad, use the device buttons and tell me what the print window shows for that button.
 
 ## Tips
 
 - **Settle** (default 60 ms) delays a chord change until the stick has stayed on it. Raise it if you hear passing chords between two that are far apart; lower it for snappier playing.
 - **Deadzone** (default 0.35) is how far you push before a chord sounds. Raise it if your sticks drift.
+- **Strum** rolls the chord out note by note (Strum dial = ms between notes). **Arp** plays one chord tone at a time (Arp rate dial = ms per step; patterns up, down, up/down, random).
+- **Voice lead** picks the inversion and octave closest to the previous chord, so progressions move smoothly instead of jumping.
 - Diatonic mode with **Hold** on is a quick way to find progressions: tap out chords without having to keep the stick pushed.
 
 ## Troubleshooting
@@ -83,7 +88,10 @@ Engine messages (for your own patches): `key`, `scale`, `mode`, `layout`, `octav
 ## Roadmap
 
 - Self-contained frozen `.amxd`
-- Arpeggio / strum button
+- Arpeggio tempo sync to Live's transport and note-length rates
+- Chord lock (pin a quality to a degree)
+- Slash chords (hold one root while choosing another)
+- Chord sets / progressions from a preset list
 - Chord memory slots (save and recall progressions)
 - Record the played chords to a Live clip
 - Per-pad profiles and a calibration step
