@@ -1,0 +1,7 @@
+{
+  "name": "gamepad-chords",
+  "version": "0.1.0",
+  "description": "Play chords in Ableton Live with a two-stick gamepad (Max for Live [js] chord engine)",
+  "scripts": { "test": "node test/test_chords.js" },
+  "license": "MIT"
+}
