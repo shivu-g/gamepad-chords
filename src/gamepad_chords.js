@@ -68,7 +68,11 @@ function deadzone(v) { CFG.deadzone = Math.max(0.05, Math.min(0.9, v)); }
 function hyst(v) { CFG.hyst = Math.max(0, Math.min(0.5, v)); }
 function vel(v) { CFG.vel = Math.max(1, Math.min(127, Math.round(v))); }
 function invy(v) { CFG.invy = v ? 1 : 0; }
-function panic() { releaseAll(); L.active = false; R.active = false; L.sec = -1; R.sec = -1; }
+function panic() {
+  releaseAll();
+  L.x = 0; L.y = 0; R.x = 0; R.y = 0;   // centre both sticks so the next message can't re-trigger a chord
+  L.active = false; R.active = false; L.sec = -1; R.sec = -1;
+}
 
 // ---------- geometry ----------
 function mag(s) { return Math.sqrt(s.x * s.x + s.y * s.y); }

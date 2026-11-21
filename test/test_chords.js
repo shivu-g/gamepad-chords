@@ -83,5 +83,16 @@ a("hold keeps chord ringing", offs().length === 0);
 call("panic");
 a("panic releases", offs().length > 0);
 
+// --- panic must centre the sticks: later messages must not re-trigger a chord ---
+call("hold", 0); call("mode", 1); call("ly", 1); call("ry", 1);
+call("panic");
+call("mode", 1);
+a("mode after panic is silent", notes().length === 0);
+call("lx", 0);
+a("lx 0 after panic is silent", notes().length === 0);
+call("ly", 1);
+eq("ly 1 after panic gives plain C triad (right stick was reset)", name(), "C [1]");
+call("panic");
+
 console.log("\n" + ok + " passed, " + bad + " failed");
 process.exit(bad ? 1 : 0);
