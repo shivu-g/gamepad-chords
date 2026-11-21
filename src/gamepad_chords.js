@@ -10,7 +10,7 @@
 //   key 0..11 | scale 0 major,1 minor | mode 0 chromatic,1 diatonic
 //   layout 0 chromatic,1 circle-of-fifths (chromatic mode only)
 //   octave -2..2 | inversion 0..3 | bass 0/1 | hold 0/1
-//   deadzone 0..1 | hyst 0..0.5 | vel 1..127 | invy 0/1 | panic
+//   deadzone 0..1 | hyst 0..0.5 | settle 0..200 (ms) | vel 1..127 | invy 0/1 | panic
 // OUTPUT:
 //   outlet 0 -> "pitch velocity" pairs (connect to [noteout])
 //   outlet 1 -> "set <chordname>" (connect to a [comment])
@@ -70,7 +70,7 @@ function chordSuffix(rel) {
 
 var CFG = {
   key: 0, scale: 0, mode: 1, layout: 1, octave: 0, inversion: 0, bass: 0, hold: 0,
-  deadzone: 0.35, hyst: 0.15, vel: 100, invy: 0
+  deadzone: 0.35, hyst: 0.15, vel: 100, invy: 0, settle: 60
 };
 var L = { x: 0, y: 0, active: false, sec: -1 };
 var R = { x: 0, y: 0, active: false, sec: -1 };
@@ -94,9 +94,11 @@ function bass(v) { CFG.bass = v ? 1 : 0; update(true); }
 function hold(v) { CFG.hold = v ? 1 : 0; }
 function deadzone(v) { CFG.deadzone = Math.max(0.05, Math.min(0.9, v)); }
 function hyst(v) { CFG.hyst = Math.max(0, Math.min(0.5, v)); }
+function settle(v) { CFG.settle = Math.max(0, Math.min(200, Math.round(v))); cancelPending(); }
 function vel(v) { CFG.vel = Math.max(1, Math.min(127, Math.round(v))); }
 function invy(v) { CFG.invy = v ? 1 : 0; }
 function panic() {
+  cancelPending();
   releaseAll();
   L.x = 0; L.y = 0; R.x = 0; R.y = 0;   // centre both sticks so the next message can't re-trigger a chord
   L.active = false; R.active = false; L.sec = -1; R.sec = -1;
@@ -185,12 +187,34 @@ function releaseAll() {
   outlet(1, "set", "-");
 }
 
+
+// ---------- settle (debounce) ----------
+// A chord change only sounds once the stick has stayed on it for CFG.settle ms, so sections
+// the stick merely sweeps through (e.g. F between Dm and G) never play. Onset waits half as long.
+var pendingChord = null;
+var settleTask = new Task(commitPending, this);
+
+function sameNotes(a, b) { return a.length === b.length && a.join(",") === b.join(","); }
+function cancelPending() { pendingChord = null; settleTask.cancel(); }
+function commitPending() {
+  if (pendingChord) { var c = pendingChord; pendingChord = null; applyChord(c); }
+}
+function requestChord(chord, immediate) {
+  if (sameNotes(chord.notes, sounding)) { cancelPending(); return; }
+  if (immediate || CFG.settle <= 0) { cancelPending(); applyChord(chord); return; }
+  if (pendingChord && sameNotes(pendingChord.notes, chord.notes)) return;   // already waiting on this one
+  pendingChord = chord;
+  settleTask.cancel();
+  settleTask.schedule(sounding.length ? CFG.settle : Math.round(CFG.settle / 2));
+}
+
 function update(force) {
   updateActive(L);
   updateActive(R);
 
   if (!L.active) {
     L.sec = -1;
+    cancelPending();
     if (!CFG.hold) { if (sounding.length) releaseAll(); }
     return;
   }
@@ -199,5 +223,5 @@ function update(force) {
   L.sec = pickSection(L.x, L.y, nL, L.sec, CFG.hyst);
   R.sec = R.active ? pickSection(R.x, R.y, nR, R.sec, CFG.hyst) : -1;
 
-  applyChord(buildChord());
+  requestChord(buildChord(), force);
 }

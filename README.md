@@ -27,12 +27,12 @@ Sections are centred on straight-up and go clockwise. Boundaries are sticky (hys
 ## Messages the [js] object accepts
 
 Stick input (floats, -1..1, **up = +1**): `lx ly rx ry` and `trig` (0..1, sets velocity).
-Settings: `key 0..11`, `scale 0|1` (major/minor), `mode 0|1`, `layout 0|1`, `octave -2..2`, `inversion 0..3`, `bass 0|1`, `hold 0|1`, `deadzone`, `hyst`, `vel`, `invy 0|1`, `panic`.
+Settings: `key 0..11`, `scale 0|1` (major/minor), `mode 0|1`, `layout 0|1`, `octave -2..2`, `inversion 0..3`, `bass 0|1`, `hold 0|1`, `deadzone`, `hyst`, `settle 0..200` (ms, default 60: a chord change only sounds once the stick has stayed on it that long, so sections you sweep through do not play; onset waits half as long), `vel`, `invy 0|1`, `panic`.
 Outlets: 0 = `pitch velocity` (to `[noteout]`), 1 = `set <chord name>` (to a `[comment]`).
 
 ## Status
 
-- Engine: done, 17/17 node tests pass.
+- Engine: done, node tests pass (npm test).
 - Max device: not built or tested yet. See `docs/MAX_PATCH.md`.
 - Gamepad axis mapping: unknown until `[hi]` is printed for each pad. See `docs/CONTROLLERS.md`.
 

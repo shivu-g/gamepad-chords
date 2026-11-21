@@ -1,14 +1,21 @@
 // Node harness: loads gamepad_chords.js with a stubbed Max environment and checks the logic
 var fs = require("fs"), vm = require("vm");
 var out = [];
-var ctx = { outlet: function () { var a = [].slice.call(arguments); out.push(a[0] === 1 ? a.slice(1) : a.slice(1)); }, Math: Math, Array: Array, Object: Object };
+var tasks = [];
+function Task(fn, obj) { this.fn = fn; this.obj = obj; this.due = false; tasks.push(this); }
+Task.prototype.schedule = function () { this.due = true; };
+Task.prototype.cancel = function () { this.due = false; };
+function fire() { tasks.forEach(function (k) { if (k.due) { k.due = false; k.fn.call(k.obj); } }); }
+var lastName = null;
+var ctx = { Task: Task, outlet: function () { var a = [].slice.call(arguments); if (a[0] === 1 && a[1] === "set") lastName = a[2]; out.push(a.slice(1)); }, Math: Math, Array: Array, Object: Object };
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(__dirname + "/../src/gamepad_chords.js", "utf8"), ctx);
 var call = function (fn) { out.length = 0; ctx[fn].apply(null, [].slice.call(arguments, 1)); };
 var notes = function () { return out.filter(function (o) { return o[0] !== "set" && o.length === 2 && o[1] > 0; }).map(function (o) { return o[0]; }); };
 var offs = function () { return out.filter(function (o) { return o.length === 2 && o[1] === 0 && o[0] !== "set"; }).map(function (o) { return o[0]; }); };
-var name = function () { var s = out.filter(function (o) { return o[0] === "set"; }); return s.length ? s[s.length - 1][1] : null; };
+var name = function () { return lastName; };   // last chord name shown on the display
 var ok = 0, bad = 0;
+ctx.settle(0);   // earlier tests assume immediate chords
 function eq(label, got, want) { var g = JSON.stringify(got), w = JSON.stringify(want); if (g === w) { ok++; console.log("PASS", label, g); } else { bad++; console.log("FAIL", label, "got", g, "want", w); } }
 function a(label, val) { if (val) { ok++; console.log("PASS", label); } else { bad++; console.log("FAIL", label); } }
 
@@ -109,6 +116,35 @@ var EXPECT = {
 };
 Object.keys(EXPECT).forEach(function (k) { var p = k.split(",").map(Number); eq("name " + k, chordName(p[0] - 1, p[1]), EXPECT[k]); });
 a("no raw interval fallback names", (function () { for (var d = 0; d < 7; d++) for (var e = -1; e < 6; e++) { if (/\(\d/.test(chordName(d, e))) return false; } return true; })());
+
+// --- settle: sweeping through F between Dm and G must not sound F ---
+ctx.panic(); ctx.settle(60); ctx.mode(1); ctx.key(0); ctx.scale(0); ctx.hold(0); ctx.invy(0);
+function raw(prefix, sec, n) { var ang = sec * 360 / n * Math.PI / 180; ctx[prefix + "x"](Math.sin(ang)); ctx[prefix + "y"](Math.cos(ang)); }
+function names() { return out.filter(function (o) { return o[0] === "set"; }).map(function (o) { return o[1]; }); }
+out.length = 0;
+raw("l", 1, 7);                         // Dm
+a("onset waits for settle (nothing sounds yet)", out.filter(function (o) { return o.length === 2 && o[1] > 0; }).length === 0);
+fire();
+eq("Dm sounds after settle", names()[names().length - 1], "Dm [2]");
+out.length = 0;
+raw("l", 3, 7);                         // sweep through F ...
+raw("l", 4, 7);                         // ... to G
+a("nothing changes while sweeping", out.length === 0);
+fire();
+eq("G sounds", names(), ["G [5]"]);
+a("F never sounded", names().indexOf("F [4]") < 0);
+out.length = 0;
+raw("l", 1, 7);                         // heads to Dm ...
+raw("l", 4, 7);                         // ... returns to G before settle
+fire();
+a("returning to the sounding chord cancels the change", out.length === 0);
+// quick flick shorter than settle never sounds
+ctx.panic(); out.length = 0;
+raw("l", 0, 7);
+ctx.lx(0); ctx.ly(0);                   // released before settle
+fire();
+a("flick shorter than settle is silent", out.filter(function (o) { return o.length === 2 && o[1] > 0; }).length === 0);
+ctx.settle(0); ctx.panic();
 
 console.log("\n" + ok + " passed, " + bad + " failed");
 process.exit(bad ? 1 : 0);
