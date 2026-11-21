@@ -6,8 +6,8 @@ function Task(fn, obj) { this.fn = fn; this.obj = obj; this.due = false; tasks.p
 Task.prototype.schedule = function () { this.due = true; };
 Task.prototype.cancel = function () { this.due = false; };
 function fire() { tasks.forEach(function (k) { if (k.due) { k.due = false; k.fn.call(k.obj); } }); }
-var lastName = null;
-var ctx = { Task: Task, outlet: function () { var a = [].slice.call(arguments); if (a[0] === 1 && a[1] === "set") lastName = a[2]; out.push(a.slice(1)); }, Math: Math, Array: Array, Object: Object };
+var lastName = null, ui = [], fb = [];
+var ctx = { Task: Task, outlet: function () { var a = [].slice.call(arguments); if (a[0] === 1 && a[1] === "set") lastName = a[2]; if (a[0] === 2) { ui.push(a.slice(1)); return; } if (a[0] === 3) { fb.push(a.slice(1)); return; } out.push(a.slice(1)); }, Math: Math, Array: Array, Object: Object };
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(__dirname + "/../src/gamepad_chords.js", "utf8"), ctx);
 var call = function (fn) { out.length = 0; ctx[fn].apply(null, [].slice.call(arguments, 1)); };
@@ -145,6 +145,59 @@ ctx.lx(0); ctx.ly(0);                   // released before settle
 fire();
 a("flick shorter than settle is silent", out.filter(function (o) { return o.length === 2 && o[1] > 0; }).length === 0);
 ctx.settle(0); ctx.panic();
+
+// --- gamepad messages, buttons, triggers, display ---
+ctx.panic(); ctx.settle(0); ctx.mode(1); ctx.key(0); ctx.scale(0); ctx.octave(0); ctx.inversion(0); ctx.bass(0); ctx.hold(0); ctx.invy(1);
+// gamepad sends y with UP negative; invy 1 flips it
+ctx.axis_left_x(0); ctx.axis_left_y(-1);
+eq("gamepad left stick up = C", lastName, "C [1]");
+ctx.axis_right_y(-1); ctx.axis_right_x(0);
+eq("gamepad right stick up = Cmaj7", lastName, "Cmaj7 [1]");
+ctx.axis_right_x(0); ctx.axis_right_y(0);
+eq("right stick released = C again", lastName, "C [1]");
+ctx.anything();     // unknown message must not throw
+a("anything() swallows unknown messages", true);
+
+out.length = 0; ctx.button_y(1);
+a("Y = octave up (notes up 12)", out.filter(function (o) { return o.length === 2 && o[1] > 0; }).map(function (o) { return o[0]; }).sort(function (x, y) { return x - y; }).join() === "60,64,67");
+out.length = 0; ctx.button_y(0); a("button release does nothing", out.length === 0);
+ctx.button_x(1); ctx.button_x(1);
+a("X x2 = octave down twice", out.length > 0);
+ctx.octave(0);   // back to 0
+out.length = 0; ctx.axis_left_trigger(0.9);
+a("left trigger full = 3rd inversion (C E G -> C up)", out.length > 0);
+out.length = 0; ctx.axis_left_trigger(0);
+ctx.button_b(1); a("B toggles bass note", out.filter(function (o) { return o.length === 2 && o[1] > 0 && o[0] < 48; }).length === 1);
+ctx.button_b(1);
+ctx.axis_right_trigger(1); a("right trigger full = vel 127", true);
+out.length = 0; ctx.axis_left_x(0); ctx.axis_left_y(0);
+a("stick release stops notes", out.filter(function (o) { return o.length === 2 && o[1] === 0; }).length > 0);
+ctx.button_a(1);                       // hold on
+ctx.axis_left_y(-1); out.length = 0; ctx.axis_left_y(0);
+a("A = hold keeps chord after stick release", out.filter(function (o) { return o.length === 2 && o[1] === 0; }).length === 0);
+out.length = 0; ctx.button_a(1);       // hold off -> releases
+a("hold off releases the chord", out.filter(function (o) { return o.length === 2 && o[1] === 0; }).length > 0);
+
+fb.length = 0; ctx.button_dpad_right(1);
+a("dpad right: key +1 and UI feedback", fb.some(function (m) { return m[0] === "key" && m[1] === "set" && m[2] === 1; }));
+ctx.button_dpad_left(1);
+ctx.button_dpad_up(1); a("dpad up: minor", fb.some(function (m) { return m[0] === "scale" && m[2] === 1; }));
+ctx.button_dpad_up(1);
+ctx.button_dpad_down(1); a("dpad down: chromatic", fb.some(function (m) { return m[0] === "mode" && m[2] === 0; }));
+ctx.button_dpad_down(1);
+ui.length = 0; ctx.key(2);
+var lab = ui.filter(function (m) { return m[0] === "labelsL"; }).pop();
+eq("labels for D major", lab, ["labelsL", "D", "Em", "F#m", "G", "A", "Bm", "C#dim"]);
+ui.length = 0; ctx.mode(0);
+eq("chromatic labels (fifths layout)", ui.filter(function (m) { return m[0] === "labelsL"; }).pop().length, 13);
+eq("chromatic right labels", ui.filter(function (m) { return m[0] === "labelsR"; }).pop(), ["labelsR", "min", "7", "maj7", "min7", "sus2", "sus4", "dim", "aug"]);
+ctx.mode(1); ctx.key(0);
+ui.length = 0; ctx.axis_left_x(0); ctx.axis_left_y(-1);
+var st = ui.filter(function (m) { return m[0] === "state"; }).pop();
+a("state message carries mode, sections and stick positions", st && st.length === 11 && st[2] === 0 && Math.abs(st[5] - 1) < 1e-9);
+ctx.button_start(1);
+a("start = panic centres sticks", ui.filter(function (m) { return m[0] === "state"; }).pop()[4] === 0);
+ctx.invy(0);
 
 console.log("\n" + ok + " passed, " + bad + " failed");
 process.exit(bad ? 1 : 0);
