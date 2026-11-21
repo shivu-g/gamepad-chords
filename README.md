@@ -95,4 +95,4 @@ Working on Windows with Live 12 Suite. The engine has automated tests; the devic
 
 ## License
 
-Not chosen yet. Add a `LICENSE` file before sharing publicly.
+[MIT](LICENSE): free to use, modify and share.
