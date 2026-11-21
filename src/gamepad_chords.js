@@ -33,12 +33,40 @@ var EXT = {
   "triad": [0, 2, 4], "7th": [0, 2, 4, 6], "9th": [0, 2, 4, 6, 8],
   "sus2": [0, 1, 4], "sus4": [0, 3, 4], "add9": [0, 2, 4, 8], "6th": [0, 2, 4, 5]
 };
-var SUFFIX = {
-  "0,4,7": "", "0,3,7": "m", "0,3,6": "dim", "0,4,8": "aug", "0,2,7": "sus2", "0,5,7": "sus4",
-  "0,4,7,10": "7", "0,4,7,11": "maj7", "0,3,7,10": "m7", "0,3,6,10": "m7b5", "0,3,6,9": "dim7",
-  "0,4,7,10,14": "9", "0,4,7,11,14": "maj9", "0,3,7,10,14": "m9", "0,4,7,14": "add9",
-  "0,3,7,14": "madd9", "0,4,7,9": "6", "0,3,7,9": "m6"
-};
+
+
+// Builds a chord-symbol suffix from semitone intervals above the root (values may exceed 12).
+function chordSuffix(rel) {
+  var h = function (n) { return rel.indexOf(n) >= 0; };
+  var minor = h(3), major = h(4), p5 = h(7), d5 = h(6);
+  var seventh = h(10) ? "7" : (h(11) ? "maj7" : "");
+  var base = "", used7 = false;
+
+  if (minor && d5) {
+    if (seventh === "7") { base = "m7b5"; used7 = true; }
+    else if (h(9)) { base = "dim7"; used7 = true; }
+    else base = "dim";
+  } else if (minor) base = "m";
+  else if (major) base = (h(8) && !p5) ? "aug" : "";
+  else if (h(5)) base = "sus4";
+  else if (h(2)) base = "sus2";
+  else base = "?";
+
+  if (seventh && !used7) {
+    if (base === "m") base = seventh === "7" ? "m7" : "mMaj7";
+    else if (base === "sus4" || base === "sus2") base = seventh + base;
+    else base += seventh;
+  }
+  if (h(14)) {
+    if (/7$/.test(base)) base = base.replace(/7$/, "9");
+    else base += (base === "m" ? "add9" : "add9");
+  } else if (h(13)) base += "(b9)";
+  else if (h(15)) base += "(#9)";
+
+  if (h(9) && p5 && !seventh && !used7) base += "6";
+  if (h(8) && (p5 || d5) && !(major && !p5)) base += "(b6)";
+  return base;
+}
 
 var CFG = {
   key: 0, scale: 0, mode: 1, layout: 1, octave: 0, inversion: 0, bass: 0, hold: 0,
@@ -127,8 +155,7 @@ function buildChord() {
     label = " [" + (L.sec + 1) + "]";
   }
 
-  var suffix = SUFFIX[rel.join(",")];
-  var name = NAMES[rootPc] + (suffix === undefined ? "(" + rel.join(" ") + ")" : suffix) + label;
+  var name = NAMES[rootPc] + chordSuffix(rel) + label;
 
   pitches.sort(function (a, b) { return a - b; });
   for (var i = 0; i < CFG.inversion && i < pitches.length - 1; i++) {

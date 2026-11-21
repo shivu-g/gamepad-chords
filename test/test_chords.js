@@ -94,5 +94,21 @@ call("ly", 1);
 eq("ly 1 after panic gives plain C triad (right stick was reset)", name(), "C [1]");
 call("panic");
 
+
+// --- naming across all diatonic degrees x extensions (C major) ---
+call("panic"); call("hold", 0); call("mode", 1); call("key", 0); call("scale", 0);
+function polar(prefix, sec, n, mag) { var a = sec * 360 / n * Math.PI / 180; call(prefix + "x", mag * Math.sin(a)); call(prefix + "y", mag * Math.cos(a)); }
+function chordName(deg, ext) { call("panic"); polar("l", deg, 7, 1); if (ext >= 0) polar("r", ext, 6, 1); var n = name(); call("panic"); return n; }
+var EXPECT = {
+  "1,0": "Cmaj7 [1]", "1,1": "Cmaj9 [1]", "1,2": "Csus2 [1]", "1,3": "Csus4 [1]", "1,4": "Cadd9 [1]", "1,5": "C6 [1]",
+  "2,0": "Dm7 [2]", "2,1": "Dm9 [2]", "2,4": "Dmadd9 [2]"  , "2,5": "Dm6 [2]",
+  "3,0": "Em7 [3]", "3,1": "Em7(b9) [3]", "3,5": "Em(b6) [3]",
+  "4,0": "Fmaj7 [4]", "4,1": "Fmaj9 [4]",
+  "5,0": "G7 [5]", "5,1": "G9 [5]",
+  "6,0": "Am7 [6]", "7,0": "Bm7b5 [7]", "7,5": "Bdim(b6) [7]"
+};
+Object.keys(EXPECT).forEach(function (k) { var p = k.split(",").map(Number); eq("name " + k, chordName(p[0] - 1, p[1]), EXPECT[k]); });
+a("no raw interval fallback names", (function () { for (var d = 0; d < 7; d++) for (var e = -1; e < 6; e++) { if (/\(\d/.test(chordName(d, e))) return false; } return true; })());
+
 console.log("\n" + ok + " passed, " + bad + " failed");
 process.exit(bad ? 1 : 0);
