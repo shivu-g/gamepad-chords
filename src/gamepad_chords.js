@@ -4,7 +4,8 @@
 // ES5 only (Max's classic js engine).
 //
 // INPUT: connect [gamepad] straight to the js inlet. It understands gamepad's own messages:
-//   axis_left_x/y, axis_right_x/y   sticks (-1..1; invy 1 flips Y so UP = +1)
+//   axis_left_x/y, axis_right_x/y   sticks (-1..1). Wheel orientation: stick UP = chord I.
+//                                   If your pad is mirrored, use invy 1 (flip vertical) / invx 1 (flip horizontal)
 //   axis_right_trigger  0..1        velocity (30..127) of the next chord
 //   axis_left_trigger   0..1        inversion by depth: light = 1st, more = 2nd, full = 3rd
 //   button_a  toggle hold           button_b  toggle bass note
@@ -16,7 +17,7 @@
 //   key 0..11 | scale 0 major,1 minor | mode 0 chromatic,1 diatonic
 //   layout 0 chromatic,1 circle-of-fifths (chromatic mode only)
 //   octave -2..2 | inversion 0..3 | bass 0/1 | hold 0/1
-//   deadzone 0..1 | hyst 0..0.5 | settle 0..200 (ms) | vel 1..127 | invy 0/1 | panic | sync
+//   deadzone 0..1 | hyst 0..0.5 | settle 0..200 (ms) | vel 1..127 | invx 0/1 | invy 0/1 | panic | sync
 // OUTLETS:
 //   0  "pitch velocity" pairs                    -> [noteout]
 //   1  "set <chordname>"                         -> a [comment] (optional)
@@ -78,7 +79,7 @@ function chordSuffix(rel) {
 
 var CFG = {
   key: 0, scale: 0, mode: 1, layout: 1, octave: 0, inversion: 0, bass: 0, hold: 0,
-  deadzone: 0.35, hyst: 0.15, vel: 100, invy: 0, settle: 60
+  deadzone: 0.35, hyst: 0.15, vel: 100, invx: 0, invy: 0, settle: 60
 };
 var L = { x: 0, y: 0, active: false, sec: -1 };
 var R = { x: 0, y: 0, active: false, sec: -1 };
@@ -87,9 +88,9 @@ var trigInv = 0;      // inversion from the left trigger
 var uiReady = false;
 
 // ---------- input ----------
-function lx(v) { L.x = v; update(); }
+function lx(v) { L.x = CFG.invx ? -v : v; update(); }
 function ly(v) { L.y = CFG.invy ? -v : v; update(); }
-function rx(v) { R.x = v; update(); }
+function rx(v) { R.x = CFG.invx ? -v : v; update(); }
 function ry(v) { R.y = CFG.invy ? -v : v; update(); }
 function trig(v) { CFG.vel = Math.round(30 + Math.max(0, Math.min(1, v)) * 97); }
 
@@ -131,6 +132,7 @@ function hyst(v) { CFG.hyst = Math.max(0, Math.min(0.5, v)); }
 function settle(v) { CFG.settle = Math.max(0, Math.min(200, Math.round(v))); cancelPending(); }
 function vel(v) { CFG.vel = Math.max(1, Math.min(127, Math.round(v))); }
 function invy(v) { CFG.invy = v ? 1 : 0; }
+function invx(v) { CFG.invx = v ? 1 : 0; }
 function panic() {
   cancelPending();
   releaseAll();

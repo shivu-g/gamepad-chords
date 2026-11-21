@@ -16,7 +16,7 @@ The `.amxd` is hand-assembled and has not been opened in Max yet. If Live refuse
 
 - Open `device/Gamepad Chords.maxpat` in Max; the Max console should say what it dislikes.
 - Or use the hand-built patch in `docs/MAX_PATCH.md`: `[gamepad]` -> `[js gamepad_chords.js]` -> `[noteout]` is all that is needed now (the engine understands the gamepad's messages directly), plus `[jsui chord_wheel.js]` on the js's 3rd outlet for the display.
-- Send `invy 1` to the js once (a `loadbang` message box) so stick-up counts as up.
+- If the wheel looks mirrored, send the js `invy 1` (flip vertical) and/or `invx 1` (flip horizontal). The device has Flip X / Flip Y switches for this.
 
 ## Regenerate
 

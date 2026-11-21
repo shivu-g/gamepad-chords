@@ -67,7 +67,7 @@ add("gamepad", "newobj", "gamepad", inl=1, outl=1, outtypes=[""], rect=(30, 230,
 add("js", "newobj", "js gamepad_chords.js", inl=1, outl=4, outtypes=["", "", "", ""], rect=(30, 320, 170, 22))
 add("noteout", "newobj", "noteout", inl=3, outl=0, outtypes=[], rect=(30, 410, 60, 22))
 add("loadbang", "newobj", "loadbang", inl=1, outl=1, outtypes=["bang"], rect=(250, 230, 60, 22))
-add("init", "message", "invy 1, sync", inl=2, outl=1, outtypes=[""], rect=(250, 270, 90, 22))
+add("init", "message", "sync", inl=2, outl=1, outtypes=[""], rect=(250, 270, 90, 22))
 add("panicmsg", "message", "panic", inl=2, outl=1, outtypes=[""], rect=(420, 270, 45, 22))
 
 line("gamepad", 0, "js")
@@ -93,6 +93,10 @@ controls = [
                                 extra={"text": "Hold", "texton": "Hold", "mode": 1})),
     ("bass", "live.text", dict(rect=(X + 76, 60, 70, 18), p=param("Bass", 2, mmax=1, enum=["off", "on"], initial=0),
                                 extra={"text": "Bass", "texton": "Bass", "mode": 1})),
+    ("invx", "live.text", dict(rect=(X + 124, 94, 50, 18), p=param("FlipX", 2, mmax=1, enum=["off", "on"], initial=0),
+                                extra={"text": "Flip X", "texton": "Flip X", "mode": 1})),
+    ("invy", "live.text", dict(rect=(X + 178, 94, 50, 18), p=param("FlipY", 2, mmax=1, enum=["off", "on"], initial=0),
+                                extra={"text": "Flip Y", "texton": "Flip Y", "mode": 1})),
     ("settle", "live.dial", dict(rect=(X, 94, 52, 62), p=param("Settle", 1, mmin=0, mmax=200, initial=60, unit=2))),
     ("deadzone", "live.dial", dict(rect=(X + 62, 94, 52, 62), p=param("Deadzone", 0, mmin=0.1, mmax=0.8, initial=0.35, unit=1))),
 ]

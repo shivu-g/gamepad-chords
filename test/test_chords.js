@@ -195,6 +195,22 @@ ctx.mode(1); ctx.key(0);
 ui.length = 0; ctx.axis_left_x(0); ctx.axis_left_y(-1);
 var st = ui.filter(function (m) { return m[0] === "state"; }).pop();
 a("state message carries mode, sections and stick positions", st && st.length === 11 && st[2] === 0 && Math.abs(st[5] - 1) < 1e-9);
+// orientation switches
+ctx.panic(); ctx.invy(0); ctx.invx(0); ctx.mode(1); ctx.key(0);
+ctx.axis_left_x(0); ctx.axis_left_y(1);
+eq("default orientation: stick up (+y) = C", lastName, "C [1]");
+ctx.axis_left_y(-1);
+a("stick down is not C", lastName !== "C [1]");
+ctx.panic(); ctx.invy(1);
+ctx.axis_left_x(0); ctx.axis_left_y(-1);
+eq("invy 1: raw -y plays C", lastName, "C [1]");
+ctx.panic(); ctx.invy(0);
+ctx.axis_left_x(0.78); ctx.axis_left_y(0.62);       // ~51 deg = degree II
+eq("clockwise from up = Dm", lastName, "Dm [2]");
+ctx.panic(); ctx.invx(1);
+ctx.axis_left_x(-0.78); ctx.axis_left_y(0.62);
+eq("invx 1 mirrors left/right", lastName, "Dm [2]");
+ctx.panic(); ctx.invx(0);
 ctx.button_start(1);
 a("start = panic centres sticks", ui.filter(function (m) { return m[0] === "state"; }).pop()[4] === 0);
 ctx.invy(0);
